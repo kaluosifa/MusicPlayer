@@ -150,7 +150,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
 				200, 410, 60, 30, hWnd, (HMENU)TIMELINE, hInst, nullptr);
 			// 歌曲时长文本框
-			hSongLength = CreateWindow(L"STATIC", L"4:00",
+			hSongLength = CreateWindow(L"STATIC", L"00:00",
 				WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
 				563, 410, 60, 30, hWnd, (HMENU)TIMETEXT, hInst, nullptr);
 
@@ -174,19 +174,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				(WPARAM)TRUE,                   // redraw flag 
 				(LPARAM)0);
 
-
+			// 右键菜单
+			rightMenu = CreatePopupMenu();
+			if (NULL == rightMenu)
+			{
+				MessageBox(hWnd, L"右键菜单创建失败!", L"", MB_OK);
+			}
+			else
+			{
+				AppendMenuA(rightMenu, MF_STRING, rMenuAdd, "添加歌曲");
+				AppendMenuA(rightMenu, MF_STRING, rMenuDelete, "删除歌曲");
+				AppendMenuA(rightMenu, MF_STRING, rMenuClear, "清空歌曲列表");
+			}
+			
 			
 			// 给列表框添加文件
-			//DlgDirListA(hListBox, (LPSTR)FileRoot, LISTBOX, 0, 0);
-			SendMessage(hListBox, LB_INSERTSTRING, -1, 
-				(LPARAM)L"C:\\Users\\卡里\\Music\\出山.mp3");
-			SendMessage(hListBox, LB_INSERTSTRING, -1,
-				(LPARAM)L"C:\\Users\\卡里\\Music\\水星记.mp3");
-			SendMessage(hListBox, LB_INSERTSTRING, -1,
-				(LPARAM)L"C:\\Users\\卡里\\Music\\芒种.mp3");
+			////DlgDirListA(hListBox, (LPSTR)FileRoot, LISTBOX, 0, 0);
+			//SendMessage(hListBox, LB_INSERTSTRING, -1, 
+			//	(LPARAM)L"C:\\Users\\卡里\\Music\\出山.mp3");
+			//SendMessage(hListBox, LB_INSERTSTRING, -1,
+			//	(LPARAM)L"C:\\Users\\卡里\\Music\\水星记.mp3");
+			//SendMessage(hListBox, LB_INSERTSTRING, -1,
+			//	(LPARAM)L"C:\\Users\\卡里\\Music\\芒种.mp3");
 
-			// 默认选中列表框第一个列表
-			SendMessage(hListBox, LB_SETCURSEL, 0, 0);
+			//// 默认选中列表框第一个列表
+			//SendMessage(hListBox, LB_SETCURSEL, 0, 0);
 
 			// 将键盘焦点设置为列表框
 			SetFocus(hListBox);
@@ -247,102 +259,130 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 		}
 		break;
-	case WM_COMMAND:
+	case WM_CONTEXTMENU:
+	{
+		if (hListBox == (HWND)wParam)
 		{
-			switch (LOWORD(wParam))
+			int xPos = GET_X_LPARAM(lParam);
+			int yPos = GET_Y_LPARAM(lParam);
+
+			TrackPopupMenuEx(rightMenu, TPM_LEFTALIGN | TPM_TOPALIGN, 
+				xPos, yPos, hWnd, nullptr);
+		}
+	}
+	break;
+	case WM_COMMAND:
+	{
+		switch (LOWORD(wParam))
+		{
+		case BUTTON_PLAY:
+		{
+			// 单击播放选中歌曲
+			index = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+			if (LB_ERR != index)
 			{
-			case BUTTON_PLAY:
+				// 解决要播放第二首歌曲时，第一首歌曲未停
+				if (lstrlen(currentMusic) != 0)
 				{
-					// 单击播放选中歌曲
-					index = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
-					if (LB_ERR != index)
-					{
-						// 解决要播放第二首歌曲时，第一首歌曲未停
-						if (lstrlen(currentMusic) != 0)
-						{
-							MUSICSTOP(currentMusic);
-							KillTimer(hWnd, TimerID);
-						}
-
-						// 当前歌曲暂停并更换另一首歌曲时，暂停按钮显示继续
-						Button_GetText(hMusicPause, ButtonText, 10);
-						if (lstrcmp(ButtonText, RESUMESTRING) == 0)
-						{
-							Button_SetText(hMusicPause, PAUSESTRING);
-						}
-						// 获取选中列表的音乐路径
-						SendMessage(hListBox, LB_GETTEXT, index, (LPARAM)MusicFileName);
-						GetShortPathName(MusicFileName, MusicFileShortPath, MAX_PATH);
-
-						// 播放歌曲时初始化时间、长度和进度条
-						GetMusicLength(MusicFileShortPath);
-						length = _wtol(SongLength);
-						minute = length / 1000 / 60;
-						second = length / 1000 % 60;
-						wsprintf(ButtonLengthText, L"%02d:%02d", minute, second);
-						Button_SetText(hSongLength, ButtonLengthText);
-						wsprintf(ButtonTimeText, L"00:00");
-						Button_SetText(hSongCurrentTime, ButtonTimeText);
-						barPos = 0;
-						SendMessage(hwndTrack, TBM_SETPOS,
-							(WPARAM)TRUE,                   // redraw flag 
-							(LPARAM)barPos);
-
-						// 打开音乐文件
-						lstrcpy(currentMusic, MusicFileShortPath);
-						MusicPlay(MusicFileShortPath);
-
-						// 创建定时器用于同步
-						TimerID = SetTimer(hWnd, 1, 1000, nullptr);
-
-					}
-					else
-					{
-						MessageBox(hWnd, L"请选择歌曲", L"", 0);
-					}
+					MUSICSTOP(currentMusic);
+					KillTimer(hWnd, TimerID);
 				}
-				break;
-			case BUTTON_PAUSE:
-				{
-					// 获取按钮文本
-					Button_GetText(hMusicPause, ButtonText, 10);
 
-					if (lstrcmp(ButtonText, PAUSESTRING) == 0)
-					{
-						MUSICPAUSE(currentMusic);
-						Button_SetText(hMusicPause, RESUMESTRING);
-					}
-					else if (lstrcmp(ButtonText, RESUMESTRING) == 0)
-					{
-						MUSICRESUME(currentMusic);
-						Button_SetText(hMusicPause, PAUSESTRING);
-					}
-				}
-				break;
-			case LISTBOX:
+				// 当前歌曲暂停并更换另一首歌曲时，暂停按钮显示继续
+				Button_GetText(hMusicPause, ButtonText, 10);
+				if (lstrcmp(ButtonText, RESUMESTRING) == 0)
 				{
-					switch (HIWORD(wParam))
-					{
-					// 列表框的项目被双击时会发送通知码
-					case LBN_DBLCLK:
-						{
-							SendMessage(hMusicPlay, BM_CLICK, 0, 0);
-						}
-						break;
-					}
+					Button_SetText(hMusicPause, PAUSESTRING);
+				}
+				// 获取选中列表的音乐路径
+				SendMessage(hListBox, LB_GETTEXT, index, (LPARAM)MusicFileName);
+				GetShortPathName(MusicFileName, MusicFileShortPath, MAX_PATH);
+
+				// 播放歌曲时初始化时间、长度和进度条
+				GetMusicLength(MusicFileShortPath);
+				length = _wtol(SongLength);
+				minute = length / 1000 / 60;
+				second = length / 1000 % 60;
+				wsprintf(ButtonLengthText, L"%02d:%02d", minute, second);
+				Button_SetText(hSongLength, ButtonLengthText);
+				wsprintf(ButtonTimeText, L"00:00");
+				Button_SetText(hSongCurrentTime, ButtonTimeText);
+				barPos = 0;
+				SendMessage(hwndTrack, TBM_SETPOS,
+					(WPARAM)TRUE,                   // redraw flag 
+					(LPARAM)barPos);
+
+				// 打开音乐文件
+				lstrcpy(currentMusic, MusicFileShortPath);
+				MusicPlay(MusicFileShortPath);
+
+				// 创建定时器用于同步
+				TimerID = SetTimer(hWnd, 1, 1000, nullptr);
+
+			}
+			else
+			{
+				MessageBox(hWnd, L"请选择歌曲", L"", 0);
+			}
+		}
+			break;
+		case BUTTON_PAUSE:
+		{
+			// 获取按钮文本
+			Button_GetText(hMusicPause, ButtonText, 10);
+
+			if (lstrcmp(ButtonText, PAUSESTRING) == 0)
+			{
+				MUSICPAUSE(currentMusic);
+				Button_SetText(hMusicPause, RESUMESTRING);
+			}
+			else if (lstrcmp(ButtonText, RESUMESTRING) == 0)
+			{
+				MUSICRESUME(currentMusic);
+				Button_SetText(hMusicPause, PAUSESTRING);
+			}
+		}
+		break;
+		case LISTBOX:
+		{
+			switch (HIWORD(wParam))
+			{
+			// 列表框的项目被双击时会发送通知码
+			case LBN_DBLCLK:
+				{
+					SendMessage(hMusicPlay, BM_CLICK, 0, 0);
 				}
 				break;
 			}
 		}
 		break;
-	case WM_PAINT:
+		case rMenuAdd:
 		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hWnd, &ps);
-			// TODO: 在此处添加使用 hdc 的任何绘图代码...
-			EndPaint(hWnd, &ps);
+			AddMusicFiles(hWnd);
 		}
 		break;
+		case rMenuDelete:
+		{
+			UINT i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+			SendMessage(hListBox, LB_DELETESTRING, i, 0);
+		}
+		break;
+		case rMenuClear:
+		{
+			
+		}
+		break;
+		}
+	}
+	break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		// TODO: 在此处添加使用 hdc 的任何绘图代码...
+		EndPaint(hWnd, &ps);
+	}
+	break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -433,6 +473,83 @@ void PlayFrom(LPCWSTR musicpath, UINT barpos)
 	mciSendString(command, nullptr, 0, nullptr);
 }
 
+void AddMusicFiles(HWND hWnd)
+{
+	OPENFILENAME ofn;
+	WCHAR szFileName[MAX_PATH * 30];
+	WCHAR* pFileName;
+	WCHAR musicDir[MAX_PATH] = L"";
+	WCHAR musicPath[MAX_PATH];
+
+	// 状态量
+	UINT flag = MULTIPLEFILE;
+	UINT i = 0;						// 循环变量
+	WCHAR* pFormat;					// 临时格式字符串指针
+	UINT index = 0;					// szFileName 索引
+
+	// 清零
+	ZeroMemory(&ofn, sizeof(ofn));
+	ZeroMemory(szFileName, sizeof(szFileName));
+	ZeroMemory(musicPath, sizeof(musicPath));
+
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hWnd;
+	ofn.lpstrFilter = L"MP3 文件 (*.mp3)\0*.mp3\0WAV 文件 (*.wav)\0*.wav\0";
+	ofn.lpstrFile = szFileName;
+	ofn.nMaxFile = sizeof(szFileName);
+	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT;
+	ofn.lpstrInitialDir = L"C:\\Users\\卡里\\Music\\";
+
+	if (GetOpenFileName(&ofn))
+	{
+		// 如果只打开一个文件
+		// 判断条件是：第一个字符串中是否包含".mp3" 或者 ".wav" 字符串以及其他音频文件格式
+		// 如果打开多个文件
+		// 将第一个字符串作为音乐文件根目录
+		// 然后依次取出歌曲文件字符串并添加到歌曲列表中去
+		lstrcpy(musicDir, szFileName);
+		
+		for (i = 0; i < MUSICFILEFORMATNUMBER; i++)
+		{
+			pFormat = MusicFileFormat[i];
+			if (nullptr == wcsstr(musicDir, pFormat))
+			{
+				flag = MULTIPLEFILE;
+				continue;
+			}
+			else
+			{
+				flag = ONEFILE;
+				break;
+			}
+		}
+
+		if (ONEFILE == flag)
+		{
+			SendMessage(hListBox, LB_INSERTSTRING, -1,
+				(LPARAM)szFileName);
+		}
+		else
+		{
+			lstrcat(musicDir, L"\\");
+			// 通过指针偏移量取得歌曲名
+			pFileName = szFileName + ofn.nFileOffset;
+			while (*pFileName)
+			{
+				// 拼接前需要将 musicFullPath 清零
+				ZeroMemory(musicPath, sizeof(musicPath));
+				// 拼接路径和歌曲名字
+				lstrcpy(musicPath, musicDir);
+				lstrcat(musicPath, pFileName);
+				// 将文件添加到歌曲列表
+				SendMessage(hListBox, LB_INSERTSTRING, -1,
+					(LPARAM)musicPath);
+
+				pFileName = pFileName + wcslen(pFileName) + 1;
+			}
+		}
+	}
+}
 
 // “关于”框的消息处理程序。
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

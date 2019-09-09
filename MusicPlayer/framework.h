@@ -11,6 +11,7 @@
 #include <windowsx.h>
 #include <CommCtrl.h>
 #pragma comment(lib, "Comctl32.lib")
+#include <commdlg.h>
 // C 运行时头文件
 #include <stdlib.h>
 #include <malloc.h>

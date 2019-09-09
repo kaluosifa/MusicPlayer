@@ -11,11 +11,19 @@
 #define TIMELINE 90
 #define TIMETEXT 91
 #define ID_TRACKBAR 100
+#define rMenuAdd	110
+#define rMenuDelete	111
+#define rMenuClear	112
 
 // 字符串常量
 #define PAUSESTRING L"暂停"
 #define RESUMESTRING L"继续"
 
+#define MUSICFILEFORMATNUMBER 2					// 文件格式数量
+#define FORMATLENGTH 5							// 格式字符串长度
+#define ONEFILE 0								// 状态值，一个文件
+#define MULTIPLEFILE 1							// 状态值，多个文件
+#define MUSICNAMELENGTH	100						// 歌曲名最大长度
 
 // 音乐播放器的全局变量
 WCHAR currentMusic[MAX_PATH];					// 当前歌曲
@@ -42,16 +50,21 @@ WCHAR ButtonLengthText[10];					// 歌曲时长按钮文本
 WCHAR ButtonTimeText[10];					// 歌曲当前时间按钮文本
 
 
-// 全局变量
+// 歌曲相关参数
 long length;								// 总的时间长度
 int minute;									// 分
 int second;									// 秒
 long position;								// 歌曲当前位置
 int m_pos;									// 当前位置分
 int s_pos;									// 当前位置秒
+
+// 计时器相关参数
 UINT_PTR TimerID;							// 定时器ID
 UINT barPos;								// 滑块位置
 UINT PlayListIndex;							// 播放列表序列
+
+// 菜单
+HMENU rightMenu;								// 右键菜单
 
 
 // 音乐播放器的前向函数声明
@@ -63,3 +76,9 @@ void				MUSICSTOP(LPCWSTR);
 void				GetMusicLength(LPCWSTR);
 void				GetCurrentPosition(LPCWSTR);
 void				PlayFrom(LPCWSTR, UINT);
+
+// 菜单函数
+void				AddMusicFiles(HWND);
+
+// 音乐文件格式
+WCHAR MusicFileFormat[MUSICFILEFORMATNUMBER][FORMATLENGTH] = {L".mp3", L".wav"};
