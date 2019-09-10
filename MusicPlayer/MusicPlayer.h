@@ -24,11 +24,16 @@
 #define ONEFILE 0								// 状态值，一个文件
 #define MULTIPLEFILE 1							// 状态值，多个文件
 #define MUSICNAMELENGTH	100						// 歌曲名最大长度
+#define MUSICSHORTNAME 20						// 没有格式的歌曲名
 
 // 音乐播放器的全局变量
 WCHAR currentMusic[MAX_PATH];					// 当前歌曲
 WCHAR SongLength[10];							// 歌曲长度
 WCHAR SongTime[10];								// 歌曲当前播放位置时间
+WCHAR CONFIGURATIONFILE[MAX_PATH] = L"C:\\Users\\卡里\\Desktop\\configuration_file.ini";
+WCHAR MUSICPLAYLIST[20] = L"MUSIC PLAY LIST";
+
+WCHAR szFileName[MAX_PATH * 30];
 
 HWND hListBox;						// 列表框句柄
 HWND hMusicPlay;					// 播放按钮句柄
@@ -39,9 +44,7 @@ HWND hSongLength;					// 歌曲时间
 HWND hwndTrack;						// 进度条滑块
 
 // 音乐文件夹路径
-WCHAR MusicFileRoot[MAX_PATH] = L"C:\\Users\\卡里\\Music\\?.flac";
 unsigned int index;								// 选中的音乐文件索引
-WCHAR MusicFileName[MAX_PATH] = L"";			// 存放选中的音乐文件名
 WCHAR MusicFileShortPath[MAX_PATH] = L"";		// 短路径
 
 // 按钮
@@ -68,6 +71,10 @@ HMENU rightMenu;								// 右键菜单
 
 
 // 音乐播放器的前向函数声明
+void				InitControl(HWND);			// 控件初始化
+void				GetMusicFromConfig(void);
+void				InitMusicTimeText(void);	// 初始化歌曲信息
+
 void				MusicOpen(LPCWSTR);
 void				MusicPlay(LPCWSTR);
 void				MUSICPAUSE(LPCWSTR);
@@ -77,8 +84,12 @@ void				GetMusicLength(LPCWSTR);
 void				GetCurrentPosition(LPCWSTR);
 void				PlayFrom(LPCWSTR, UINT);
 
-// 菜单函数
-void				AddMusicFiles(HWND);
-
 // 音乐文件格式
 WCHAR MusicFileFormat[MUSICFILEFORMATNUMBER][FORMATLENGTH] = {L".mp3", L".wav"};
+
+// 添加歌曲相关函数
+void				AddMusicFiles(HWND);
+void				FullPathToMusicName(WCHAR *, WCHAR *);	// 从完整路径中取出歌曲名
+void				RemoveFormatString(WCHAR *);			// 移除歌名中的格式子串
+void				OneFile(WCHAR *);						// 添加一个歌曲
+void				MultipleFiles(OPENFILENAME, WCHAR *);	// 添加多首歌

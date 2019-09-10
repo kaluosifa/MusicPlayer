@@ -129,79 +129,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-		
 	case WM_CREATE:
 		{
-			// 窗口控件
-			// 歌曲列表
-			hListBox = CreateWindow(L"LISTBOX", L"", 
-				WS_VISIBLE | WS_CHILD | WS_VSCROLL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
-				0, 0, 625, 400, hWnd, (HMENU)LISTBOX, hInst, nullptr);
-			// 播放按钮
-			hMusicPlay = CreateWindow(L"BUTTON", L"播放", 
-				WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				0, 410, 60, 30, hWnd, (HMENU)BUTTON_PLAY, hInst, nullptr);
-			// 暂停按钮
-			hMusicPause = CreateWindow(L"BUTTON", L"暂停", 
-				WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-				80, 410, 60, 30, hWnd, (HMENU)BUTTON_PAUSE, hInst, nullptr);
-			// 歌曲当前时间文本框
-			hSongCurrentTime = CreateWindow(L"STATIC", L"00:00",
-				WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
-				200, 410, 60, 30, hWnd, (HMENU)TIMELINE, hInst, nullptr);
-			// 歌曲时长文本框
-			hSongLength = CreateWindow(L"STATIC", L"00:00",
-				WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
-				563, 410, 60, 30, hWnd, (HMENU)TIMETEXT, hInst, nullptr);
-
-			// 歌曲进度滑块
-			InitCommonControls(); // loads common control's DLL
-			hwndTrack = CreateWindow(TRACKBAR_CLASS, L"", 
-				WS_CHILD | WS_VISIBLE | TBS_NOTICKS | TBS_FIXEDLENGTH | TBS_HORZ,
-				280, 410, 260, 30, hWnd, (HMENU)ID_TRACKBAR, hInst, NULL);
-			SendMessage(hwndTrack, TBM_SETRANGE,
-				(WPARAM)TRUE,                   // redraw flag 
-				(LPARAM)MAKELONG(0, 100));  // min. & max. positions
-
-			SendMessage(hwndTrack, TBM_SETPAGESIZE,
-				0, (LPARAM)4);                  // new page size 
-
-			SendMessage(hwndTrack, TBM_SETSEL,
-				(WPARAM)FALSE,                  // redraw flag 
-				(LPARAM)MAKELONG(0, 100));
-
-			SendMessage(hwndTrack, TBM_SETPOS,
-				(WPARAM)TRUE,                   // redraw flag 
-				(LPARAM)0);
-
-			// 右键菜单
-			rightMenu = CreatePopupMenu();
-			if (NULL == rightMenu)
-			{
-				MessageBox(hWnd, L"右键菜单创建失败!", L"", MB_OK);
-			}
-			else
-			{
-				AppendMenuA(rightMenu, MF_STRING, rMenuAdd, "添加歌曲");
-				AppendMenuA(rightMenu, MF_STRING, rMenuDelete, "删除歌曲");
-				AppendMenuA(rightMenu, MF_STRING, rMenuClear, "清空歌曲列表");
-			}
-			
-			
-			// 给列表框添加文件
-			////DlgDirListA(hListBox, (LPSTR)FileRoot, LISTBOX, 0, 0);
-			//SendMessage(hListBox, LB_INSERTSTRING, -1, 
-			//	(LPARAM)L"C:\\Users\\卡里\\Music\\出山.mp3");
-			//SendMessage(hListBox, LB_INSERTSTRING, -1,
-			//	(LPARAM)L"C:\\Users\\卡里\\Music\\水星记.mp3");
-			//SendMessage(hListBox, LB_INSERTSTRING, -1,
-			//	(LPARAM)L"C:\\Users\\卡里\\Music\\芒种.mp3");
-
-			//// 默认选中列表框第一个列表
-			//SendMessage(hListBox, LB_SETCURSEL, 0, 0);
-
-			// 将键盘焦点设置为列表框
-			SetFocus(hListBox);
+			InitControl(hWnd);
 		}
 		break;
 	case WM_TIMER:
@@ -240,7 +170,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							PlayListIndex = 0;
 						SendMessage(hListBox, LB_SETCURSEL, PlayListIndex, 0);
 						SendMessage(hMusicPlay, BM_CLICK, 0, 0);
-
 					}
 				}
 			}
@@ -277,6 +206,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case BUTTON_PLAY:
 		{
+			WCHAR musicPath[MAX_PATH] = L"";			// 存放选中的音乐文件名
+			WCHAR musicName[MUSICSHORTNAME] = L"";
 			// 单击播放选中歌曲
 			index = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
 			if (LB_ERR != index)
@@ -294,9 +225,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					Button_SetText(hMusicPause, PAUSESTRING);
 				}
-				// 获取选中列表的音乐路径
-				SendMessage(hListBox, LB_GETTEXT, index, (LPARAM)MusicFileName);
-				GetShortPathName(MusicFileName, MusicFileShortPath, MAX_PATH);
+				// 获取选中列表的歌曲名
+				// 通过歌曲名在配置文件中找到对应的路径
+				SendMessage(hListBox, LB_GETTEXT, index, (LPARAM)musicName);
+				GetPrivateProfileStringW(MUSICPLAYLIST, musicName,
+					L"", musicPath, sizeof(musicPath), CONFIGURATIONFILE);
+
+				if (!lstrcmp(musicPath, L""))
+				{
+					MessageBox(hWnd, L"找不到对应的歌曲文件！", L"", MB_OK);
+					break;
+				}
+				GetShortPathName(musicPath, MusicFileShortPath, MAX_PATH);
 
 				// 播放歌曲时初始化时间、长度和进度条
 				GetMusicLength(MusicFileShortPath);
@@ -363,13 +303,48 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 		case rMenuDelete:
 		{
-			UINT i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+			UINT i = 0;
+			WCHAR musicName[MUSICSHORTNAME] = L"";
+			WCHAR currentM[MUSICSHORTNAME] = L"";
+			i = SendMessage(hListBox, LB_GETCURSEL, 0, 0);
+			SendMessage(hListBox, LB_GETTEXT, i, (LPARAM)musicName);
+			// 如果要删除正在播放的歌
+			FullPathToMusicName(currentMusic, currentM);
+			RemoveFormatString(currentM);
+
+			if (!lstrcmp(musicName, currentM) && SendMessage(hwndTrack, TBM_GETPOS, 0, 0))
+			{
+				MUSICSTOP(currentMusic);
+				KillTimer(hWnd, TimerID);
+				InitMusicTimeText();
+			}
 			SendMessage(hListBox, LB_DELETESTRING, i, 0);
+			WritePrivateProfileStringW(MUSICPLAYLIST, musicName, NULL, CONFIGURATIONFILE);
 		}
 		break;
 		case rMenuClear:
 		{
+			// 如果正在播放歌曲，关闭当前歌曲
+			if (SendMessage(hwndTrack, TBM_GETPOS, 0, 0))
+			{
+				MUSICSTOP(currentMusic);
+				KillTimer(hWnd, TimerID);
+				InitMusicTimeText();
+			}
+
+			int len = 0;
+
+			len = SendMessage(hListBox, LB_GETCOUNT, 0, 0);
+			if (!len)
+				break;
 			
+			len--;
+			while (len >= 0)
+			{
+				SendMessage(hListBox, LB_DELETESTRING, len, 0);
+				len--;
+			}
+			WritePrivateProfileStringW(MUSICPLAYLIST, NULL, NULL, CONFIGURATIONFILE);
 		}
 		break;
 		}
@@ -390,6 +365,109 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
+}
+
+void InitControl(HWND hWnd)
+{
+	// 窗口控件
+	// 歌曲列表
+	hListBox = CreateWindow(L"LISTBOX", L"",
+		WS_VISIBLE | WS_CHILD | WS_VSCROLL | LBS_NOTIFY | LBS_NOINTEGRALHEIGHT,
+		0, 0, 625, 400, hWnd, (HMENU)LISTBOX, hInst, nullptr);
+	// 播放按钮
+	hMusicPlay = CreateWindow(L"BUTTON", L"播放",
+		WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+		0, 410, 60, 30, hWnd, (HMENU)BUTTON_PLAY, hInst, nullptr);
+	// 暂停按钮
+	hMusicPause = CreateWindow(L"BUTTON", L"暂停",
+		WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+		80, 410, 60, 30, hWnd, (HMENU)BUTTON_PAUSE, hInst, nullptr);
+	// 歌曲当前时间文本框
+	hSongCurrentTime = CreateWindow(L"STATIC", L"00:00",
+		WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
+		200, 410, 60, 30, hWnd, (HMENU)TIMELINE, hInst, nullptr);
+	// 歌曲时长文本框
+	hSongLength = CreateWindow(L"STATIC", L"00:00",
+		WS_CHILD | WS_VISIBLE | WS_BORDER | SS_CENTER | SS_CENTERIMAGE,
+		563, 410, 60, 30, hWnd, (HMENU)TIMETEXT, hInst, nullptr);
+
+	// 歌曲进度滑块
+	InitCommonControls(); // loads common control's DLL
+	hwndTrack = CreateWindow(TRACKBAR_CLASS, L"",
+		WS_CHILD | WS_VISIBLE | TBS_NOTICKS | TBS_FIXEDLENGTH | TBS_HORZ,
+		280, 410, 260, 30, hWnd, (HMENU)ID_TRACKBAR, hInst, NULL);
+	SendMessage(hwndTrack, TBM_SETRANGE,
+		(WPARAM)TRUE,                   // redraw flag 
+		(LPARAM)MAKELONG(0, 100));  // min. & max. positions
+
+	SendMessage(hwndTrack, TBM_SETPAGESIZE,
+		0, (LPARAM)4);                  // new page size 
+
+	SendMessage(hwndTrack, TBM_SETSEL,
+		(WPARAM)FALSE,                  // redraw flag 
+		(LPARAM)MAKELONG(0, 100));
+
+	SendMessage(hwndTrack, TBM_SETPOS,
+		(WPARAM)TRUE,                   // redraw flag 
+		(LPARAM)0);
+
+	// 右键菜单
+	rightMenu = CreatePopupMenu();
+	if (NULL == rightMenu)
+	{
+		MessageBox(hWnd, L"右键菜单创建失败!", L"", MB_OK);
+	}
+	else
+	{
+		AppendMenuA(rightMenu, MF_STRING, rMenuAdd, "添加歌曲");
+		AppendMenuA(rightMenu, MF_STRING, rMenuDelete, "删除歌曲");
+		AppendMenuA(rightMenu, MF_STRING, rMenuClear, "清空歌曲列表");
+	}
+
+	// 读取配置文件
+	GetMusicFromConfig();
+
+	// 将键盘焦点设置为列表框
+	SetFocus(hListBox);
+}
+
+void GetMusicFromConfig(void)
+{
+	WCHAR musicList[MAX_PATH * 30] = L"";
+
+	GetPrivateProfileStringW(MUSICPLAYLIST, nullptr,
+		L"", musicList, sizeof(musicList), CONFIGURATIONFILE);
+
+	if (lstrcmp(musicList, L"") == 0)
+		return;
+
+	// 取出所有的歌曲名
+	// 显示到播放列表
+	WCHAR musicName[MUSICSHORTNAME] = L"";
+	WCHAR* p = musicList;
+
+	while (*p)
+	{
+		lstrcpyW(musicName, p);
+		SendMessage(hListBox, LB_INSERTSTRING, -1,
+			(LPARAM)musicName);
+		p = p + lstrlenW(p) + 1;
+	}
+
+	// 默认选中列表框第一个列表
+	SendMessage(hListBox, LB_SETCURSEL, 0, 0);
+}
+
+void InitMusicTimeText(void)
+{
+	// 初始化进度条、时间戳、时间
+	wsprintf(ButtonTimeText, L"00:00");
+	Button_SetText(hSongCurrentTime, ButtonTimeText);
+
+	wsprintf(ButtonLengthText, L"00:00");
+	Button_SetText(hSongLength, ButtonLengthText);
+
+	SendMessage(hwndTrack, TBM_SETPOS, (WPARAM)TRUE, 0);
 }
 
 void MusicOpen(LPCWSTR musicpath)
@@ -476,8 +554,6 @@ void PlayFrom(LPCWSTR musicpath, UINT barpos)
 void AddMusicFiles(HWND hWnd)
 {
 	OPENFILENAME ofn;
-	WCHAR szFileName[MAX_PATH * 30];
-	WCHAR* pFileName;
 	WCHAR musicDir[MAX_PATH] = L"";
 	WCHAR musicPath[MAX_PATH];
 
@@ -507,6 +583,7 @@ void AddMusicFiles(HWND hWnd)
 		// 如果打开多个文件
 		// 将第一个字符串作为音乐文件根目录
 		// 然后依次取出歌曲文件字符串并添加到歌曲列表中去
+		szFileName[lstrlenW(szFileName)] = '\0';
 		lstrcpy(musicDir, szFileName);
 		
 		for (i = 0; i < MUSICFILEFORMATNUMBER; i++)
@@ -526,47 +603,89 @@ void AddMusicFiles(HWND hWnd)
 
 		if (ONEFILE == flag)
 		{
-			SendMessage(hListBox, LB_INSERTSTRING, -1,
-				(LPARAM)szFileName);
+			OneFile(szFileName);
 		}
 		else
 		{
-			lstrcat(musicDir, L"\\");
-			// 通过指针偏移量取得歌曲名
-			pFileName = szFileName + ofn.nFileOffset;
-			while (*pFileName)
-			{
-				// 拼接前需要将 musicFullPath 清零
-				ZeroMemory(musicPath, sizeof(musicPath));
-				// 拼接路径和歌曲名字
-				lstrcpy(musicPath, musicDir);
-				lstrcat(musicPath, pFileName);
-				// 将文件添加到歌曲列表
-				SendMessage(hListBox, LB_INSERTSTRING, -1,
-					(LPARAM)musicPath);
-
-				pFileName = pFileName + wcslen(pFileName) + 1;
-			}
+			MultipleFiles(ofn, musicDir);
 		}
 	}
 }
 
-// “关于”框的消息处理程序。
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+void RemoveFormatString(WCHAR* musicName)
 {
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
+	// 找到 '.' 将其更改为 '\0'
+	UINT i = 0;
+	while (musicName[i])
 	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
+		if (musicName[i] == '.')
+			musicName[i] = '\0';
+		else
+			i++;
 	}
-	return (INT_PTR)FALSE;
+}
+
+void FullPathToMusicName(WCHAR *source, WCHAR *str)
+{
+	UINT i = lstrlenW(source) - 1;
+	UINT j = 0;
+	while (source[i])
+	{
+		if (source[i] == '\\')
+			break;
+		else
+			i--;
+	}
+	i++;
+	while (source[i])
+	{
+		str[j++] = source[i++];
+	}
+	str[j] = '\0';
+}
+
+void OneFile(WCHAR *buffer)
+{
+	// 保存路径 szFileName
+	// 取出完整歌名 musicName
+	// 去除歌名里的格式子串 musicName
+	WCHAR musicName[MUSICSHORTNAME] = L"";
+	WCHAR musicPath[MAX_PATH] = L"";
+
+	lstrcpy(musicPath, buffer);
+
+	FullPathToMusicName(buffer, musicName);
+	RemoveFormatString(musicName);
+	SendMessage(hListBox, LB_INSERTSTRING, -1,
+		(LPARAM)musicName);
+
+	// 保存到配置文件
+	WritePrivateProfileStringW(MUSICPLAYLIST, musicName, musicPath, CONFIGURATIONFILE);
+}
+
+void MultipleFiles(OPENFILENAME ofn, WCHAR *musicDir)
+{
+	WCHAR musicPath[MAX_PATH];
+	WCHAR musicName[MUSICSHORTNAME];
+
+	lstrcat(musicDir, L"\\");
+	// 通过指针偏移量取得歌曲名
+	WCHAR *p = ofn.lpstrFile + ofn.nFileOffset;
+	while (*p)
+	{
+		// 拼接前需要将 musicFullPath 清零
+		ZeroMemory(musicPath, sizeof(musicPath));
+		// 拼接路径和歌曲名字
+		lstrcpy(musicPath, musicDir);
+		lstrcat(musicPath, p);
+		
+		// 将文件添加到歌曲列表
+		lstrcpy(musicName, p);
+		RemoveFormatString(musicName);
+		SendMessage(hListBox, LB_INSERTSTRING, -1,
+			(LPARAM)musicName);
+		WritePrivateProfileStringW(MUSICPLAYLIST, musicName, musicPath, CONFIGURATIONFILE);
+
+		p = p + lstrlenW(p) + 1;
+	}
 }
