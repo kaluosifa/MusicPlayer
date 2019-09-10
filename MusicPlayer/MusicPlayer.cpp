@@ -574,7 +574,7 @@ void AddMusicFiles(HWND hWnd)
 	ofn.lpstrFile = szFileName;
 	ofn.nMaxFile = sizeof(szFileName);
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ALLOWMULTISELECT;
-	ofn.lpstrInitialDir = L"C:\\Users\\卡里\\Music\\";
+	ofn.lpstrInitialDir = L"D:\\";
 
 	if (GetOpenFileName(&ofn))
 	{

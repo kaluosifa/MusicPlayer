@@ -30,7 +30,7 @@
 WCHAR currentMusic[MAX_PATH];					// 当前歌曲
 WCHAR SongLength[10];							// 歌曲长度
 WCHAR SongTime[10];								// 歌曲当前播放位置时间
-WCHAR CONFIGURATIONFILE[MAX_PATH] = L"C:\\Users\\卡里\\Desktop\\configuration_file.ini";
+WCHAR CONFIGURATIONFILE[MAX_PATH] = L"D:\\Music_Player_configuration_file.ini";
 WCHAR MUSICPLAYLIST[20] = L"MUSIC PLAY LIST";
 
 WCHAR szFileName[MAX_PATH * 30];
