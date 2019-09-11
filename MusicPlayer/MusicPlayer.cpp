@@ -154,7 +154,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						Button_SetText(hSongCurrentTime, SongTime);
 						
 						// 更新进度条
-						UINT now_barpos = position * 100 / length + 1;
+						UINT now_barpos = position * 1000 / length + 1;
 						if (barPos < now_barpos)
 							barPos = now_barpos;
 
@@ -398,18 +398,22 @@ void InitControl(HWND hWnd)
 		280, 410, 260, 30, hWnd, (HMENU)ID_TRACKBAR, hInst, NULL);
 	SendMessage(hwndTrack, TBM_SETRANGE,
 		(WPARAM)TRUE,                   // redraw flag 
-		(LPARAM)MAKELONG(0, 100));  // min. & max. positions
+		(LPARAM)MAKELONG(0, 1000));  // min. & max. positions
 
 	SendMessage(hwndTrack, TBM_SETPAGESIZE,
 		0, (LPARAM)4);                  // new page size 
 
 	SendMessage(hwndTrack, TBM_SETSEL,
 		(WPARAM)FALSE,                  // redraw flag 
-		(LPARAM)MAKELONG(0, 100));
+		(LPARAM)MAKELONG(0, 1000));
 
 	SendMessage(hwndTrack, TBM_SETPOS,
 		(WPARAM)TRUE,                   // redraw flag 
 		(LPARAM)0);
+
+	// 加载默认皮肤
+	SkinH_Attach();
+	SkinH_DetachEx(hListBox);			// 卸载播放列表的皮肤
 
 	// 右键菜单
 	rightMenu = CreatePopupMenu();
@@ -430,6 +434,7 @@ void InitControl(HWND hWnd)
 	// 将键盘焦点设置为列表框
 	SetFocus(hListBox);
 }
+
 
 void GetMusicFromConfig(void)
 {

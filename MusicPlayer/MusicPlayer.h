@@ -3,6 +3,10 @@
 #include "resource.h"
 #include "framework.h"
 
+// 引入皮肤库头文件
+#include "SkinH.h"
+#pragma comment(lib, "SkinHu.lib")
+
 
 // 句柄菜单
 #define LISTBOX 70
@@ -23,15 +27,15 @@
 #define FORMATLENGTH 5							// 格式字符串长度
 #define ONEFILE 0								// 状态值，一个文件
 #define MULTIPLEFILE 1							// 状态值，多个文件
-#define MUSICNAMELENGTH	100						// 歌曲名最大长度
-#define MUSICSHORTNAME 20						// 没有格式的歌曲名
+#define MUSICNAMELENGTH	MAX_PATH				// 歌曲名最大长度
+#define MUSICSHORTNAME MAX_PATH					// 没有格式的歌曲名
 
 // 音乐播放器的全局变量
 WCHAR currentMusic[MAX_PATH];					// 当前歌曲
 WCHAR SongLength[10];							// 歌曲长度
 WCHAR SongTime[10];								// 歌曲当前播放位置时间
 WCHAR CONFIGURATIONFILE[MAX_PATH] = L"D:\\Music_Player_configuration_file.ini";
-WCHAR MUSICPLAYLIST[20] = L"MUSIC PLAY LIST";
+WCHAR MUSICPLAYLIST[MAX_PATH] = L"MUSIC PLAY LIST";
 
 WCHAR szFileName[MAX_PATH * 30];
 

@@ -40,6 +40,9 @@
     <Image Include="image\music_player_48px_1201163_easyicon.net.ico">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="image\2.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MusicPlayer.cpp">

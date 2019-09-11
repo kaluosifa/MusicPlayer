@@ -163,6 +163,7 @@
     <ResourceCompile Include="MusicPlayer.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="image\2.bmp" />
     <Image Include="image\music_player_32px_1201163_easyicon.net.ico" />
     <Image Include="image\music_player_48px_1201163_easyicon.net.ico" />
   </ItemGroup>
